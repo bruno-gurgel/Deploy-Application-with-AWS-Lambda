@@ -47,7 +47,7 @@ export async function updateTodo(userId, todoId, todoUpdate) {
       userId,
       todoId
     },
-    UpdateExpression: 'SET #name = :name, dueDate = :dueDate, done = :done',
+    UpdateExpression: 'SET #name = :name, #dueDate = :dueDate, #done = :done',
     ExpressionAttributeNames: {
       '#name': 'name',
       '#dueDate': 'dueDate',

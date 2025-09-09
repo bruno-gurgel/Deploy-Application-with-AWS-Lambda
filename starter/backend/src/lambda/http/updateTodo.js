@@ -1,19 +1,12 @@
-import { DynamoDBDocument } from '@aws-sdk/lib-dynamodb'
-import { DynamoDB } from '@aws-sdk/client-dynamodb'
-import AWSXRay from 'aws-xray-sdk-core'
 import { getUserId } from '../utils.mjs'
-import { createTodo, updateTodo } from '../../businessLogic/todos.mjs'
-import { createLogger } from 'winston'
-
-const dynamoDb = new DynamoDB()
-const dynamoDbXray = AWSXRay.captureAWSv3Client(dynamoDb)
-const dynamoDBClient = DynamoDBDocument.from(dynamoDbXray)
+import { updateTodo } from '../../businessLogic/todos.mjs'
+import { createLogger } from '../../utils/logger.mjs'
 
 const logger = createLogger('UpdateTodo')
 
 export async function handler(event) {
   try {
-    logger.info("Processing updateTodo request", {event})
+    logger.info('Processing updateTodo request', { event })
 
     const todoId = event.pathParameters.todoId
     const todo = JSON.parse(event.body)
@@ -21,7 +14,7 @@ export async function handler(event) {
 
     const updatedTodo = await updateTodo(userId, todoId, todo)
 
-    logger.info("Updated todo successfully", { updatedTodo })
+    logger.info('Updated todo successfully', { updatedTodo })
 
     return {
       statusCode: 200,
