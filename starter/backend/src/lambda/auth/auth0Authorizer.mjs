@@ -4,11 +4,16 @@ import { createLogger } from '../../utils/logger.mjs'
 
 const logger = createLogger('auth')
 
-const jwksUrl = 'https://test-endpoint.auth0.com/.well-known/jwks.json'
+const jwksUrl = 'https://dev-7v57uhoi5x8xq2wa.us.auth0.com/.well-known/jwks.json'
+
 
 export async function handler(event) {
   try {
     const jwtToken = await verifyToken(event.authorizationToken)
+
+    logger.info('User was authorized', {
+      token: jwtToken
+    })
 
     return {
       principalId: jwtToken.sub,
@@ -46,8 +51,13 @@ async function verifyToken(authHeader) {
   const token = getToken(authHeader)
   const jwt = jsonwebtoken.decode(token, { complete: true })
 
-  // TODO: Implement token verification
-  return undefined;
+
+  if (!jwt || !jwt.header || !jwt.header.kid) {
+    throw new Error('Invalid token')
+  }
+
+  const signingKey = await getSigningKey(jwt.header.kid)
+  return jsonwebtoken.verify(token, signingKey, { algorithms: ['RS256'] })
 }
 
 function getToken(authHeader) {
@@ -60,4 +70,18 @@ function getToken(authHeader) {
   const token = split[1]
 
   return token
+}
+
+async function getSigningKey(kid) {
+  logger.info('Fetching JWKS from Auth0')
+  const response = await Axios.get(jwksUrl)
+
+  const key = response.data.keys.find(k => k.kid === kid)
+  if (!key) {
+    throw new Error(`Unable to find a signing key that matches '${kid}'`)
+  }
+
+  // Convert JWK to PEM format
+  const cert = key.x5c[0]
+  return `-----BEGIN CERTIFICATE-----\n${cert}\n-----END CERTIFICATE-----`
 }
